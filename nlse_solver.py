@@ -3,7 +3,7 @@ Equation:
     ∂A/∂z = i (β2 / 2) ∂^2 A / ∂t^2 + i γ |A|^2 A - (α/2) A
 
 Algorithm (per step dz):
-    1) Apply half linear step:  A -> exp(i β2 ω^2 dz/4) · FFT(A) -> IFFT
+    1) Apply half linear step:  A -> exp(i β2 ω^2 dz/2) · FFT(A) -> IFFT
     2) Apply full nonlinear step: A -> A · exp(i γ |A|^2 dz) · exp(-α dz/2)
     3) Apply half linear step again
 """
