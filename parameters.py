@@ -4,7 +4,7 @@ Units are chosen for convenience:
 - Length in kilometers (km)
 - Wavelength in nanometers (nm)
 - Dispersion (beta2) in ps^2/km
-- Nonlinearity (gamma) in 1/(W·km)
+- Nonlinearity (gamma) in 1/(W*km)
 """
 
 import numpy as np
@@ -21,19 +21,18 @@ DZ = Z_MAX / NZ       # step size (km)
 
 # Fiber Physical Parameters:
 BETA2 = -20.0         # ps^2/km  (anomalous dispersion; negative sign)
-GAMMA = 1.3           # 1/(W·km)  (nonlinear coefficient, typical for silica fiber)
-ALPHA = 0.0           # loss (1/km); set nonzero if you want attenuation later
+GAMMA = 1.3           # 1/(W*km)  (nonlinear coefficient, typical for silica fiber)
+ALPHA = 0.0           # loss (1/km); set nonzero if you want attenuation
 
 # Pulse Parameters:
-INITIAL_PULSE = "sech"   # "sech" or "gaussian"
-PULSE_T0 = 1.0           # width parameter (ps)
-PULSE_PEAK_POWER = 50   # W (peak power of pulse)
-CENTER_WAVELENGTH = 1550.0  # nm (telecom wavelength)
-NORM_TYPE = "physical"   # "unit" normalizes peak to 1, "physical" keeps W units
+INITIAL_PULSE = "gaussian"   # "sech" or "gaussian"
+PULSE_T0 = 1.0               # width parameter (ps)
+PULSE_PEAK_POWER = 50        # W (peak power of pulse)
+CENTER_WAVELENGTH = 1550.0   # nm (telecom wavelength)
+NORM_TYPE = "physical"       # "unit" normalizes peak to 1, "physical" keeps W units
 
 # Derived Quantities:
 C = 299792458 # Speed of light in vacuum (m/s)
-CENTER_FREQUENCY = C / (CENTER_WAVELENGTH * 1e-9) / 1e12  # Convert center wavelength to frequency (THz)
 
 # Soliton parameters (for diagnostics):
 # Fundamental soliton condition: L_D = L_NL => N^2 = 1
@@ -42,34 +41,39 @@ L_D = PULSE_T0**2 / abs(BETA2)  # dispersion length (km)
 L_NL = 1.0 / (GAMMA * PULSE_PEAK_POWER) if PULSE_PEAK_POWER > 0 else np.inf  # nonlinear length (km)
 SOLITON_ORDER = np.sqrt(L_D / L_NL) if L_NL < np.inf else 0.0  # N parameter
 
+# Soliton regime thresholds
+SOLITON_FUNDAMENTAL_TOLERANCE = 0.15  # N within 1.0 ± this is fundamental soliton
+SOLITON_SECOND_ORDER_MIN = 1.5        # N >= this is second-order soliton
+SOLITON_SECOND_ORDER_MAX = 2.5        # N < this is still second-order
+SOLITON_DISPERSION_DOMINATED = 0.85   # N < this is dispersion-dominated
+
 # Output:
 PLOT_DIR = "plots"
 os.makedirs(PLOT_DIR, exist_ok=True)
 
 # Utility Functions:
 def print_parameters():
-    print("=" * 60)
     print("Simulation Parameters:")
-    print(f"Time window: ±{T_MAX} ps, Samples: {N_T}")
-    print(f"Propagation: Z_MAX={Z_MAX} km, Steps={NZ}, Δz={DZ:.4f} km")
+    print(f"Time window: +/-{T_MAX} ps, Samples: {N_T}")
+    print(f"Propagation: Z_MAX={Z_MAX} km, Steps={NZ}, dz={DZ:.4f} km")
     print("\nFiber Parameters")
-    print(f"β₂ = {BETA2} ps²/km, γ = {GAMMA} 1/(W·km), α = {ALPHA} 1/km")
+    print(f"beta2 = {BETA2} ps^2/km, gamma = {GAMMA} 1/(W*km), alpha = {ALPHA} 1/km")
     print("\nPulse Parameters")
-    print(f"Shape: {INITIAL_PULSE}, T₀ = {PULSE_T0} ps, Peak Power = {PULSE_PEAK_POWER} W")
+    print(f"Shape: {INITIAL_PULSE}, T0 = {PULSE_T0} ps, Peak Power = {PULSE_PEAK_POWER} W")
     print(f"Central Wavelength: {CENTER_WAVELENGTH} nm")
+    print(f"Normalization: {NORM_TYPE}")
     print("\nCharacteristic Lengths:")
     print(f"L_D (dispersion) = {L_D:.4f} km")
     print(f"L_NL (nonlinear) = {L_NL:.4f} km")
     print(f"Soliton order N = {SOLITON_ORDER:.3f}")
-    if abs(SOLITON_ORDER - 1.0) < 0.15:
-        print("  → Near fundamental soliton regime!")
-    elif 1.5 <= SOLITON_ORDER < 2.5:
-        print("  → Second-order soliton regime (expect periodic oscillations)")
-    elif SOLITON_ORDER >= 2.5:
-        print("  → Higher-order soliton regime (expect complex dynamics)")
-    elif SOLITON_ORDER < 0.85:
-        print("  → Dispersion-dominated regime")
-    print("=" * 60)
+    if abs(SOLITON_ORDER - 1.0) < SOLITON_FUNDAMENTAL_TOLERANCE:
+        print("  -> Near fundamental soliton regime!")
+    elif SOLITON_SECOND_ORDER_MIN <= SOLITON_ORDER < SOLITON_SECOND_ORDER_MAX:
+        print("  -> Second-order soliton regime (expect periodic oscillations)")
+    elif SOLITON_ORDER >= SOLITON_SECOND_ORDER_MAX:
+        print("  -> Higher-order soliton regime (expect complex dynamics)")
+    elif SOLITON_ORDER < SOLITON_DISPERSION_DOMINATED:
+        print("  -> Dispersion-dominated regime")
 
 def validate_parameters():
     dt = (2 * T_MAX) / N_T
@@ -99,7 +103,7 @@ def validate_parameters():
     # Check step size for dispersion (CFL-like condition)
     # Rule: dz << L_D to resolve dispersive evolution
     if DZ > 0.1 * L_D:
-        print(f"WARNING: Step size Δz={DZ:.4f} km is large compared to L_D={L_D:.4f} km")
+        print(f"WARNING: Step size dz={DZ:.4f} km is large compared to L_D={L_D:.4f} km")
         print("         Consider decreasing DZ for better accuracy.")
     
     # Check step size for nonlinearity
