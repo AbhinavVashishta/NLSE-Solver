@@ -23,7 +23,7 @@ def compute_spectrum(A, t):
     freqs = fftfreq(len(t), d=dt)
     omega = 2 * np.pi * freqs
     S = np.abs(fftshift(fft(A))) ** 2
-    # Normalize by total spectral energy (prevents invisible linear case)
+    # Normalize by total spectral energy
     S /= np.trapz(S, omega)
     return omega, S
 
@@ -53,8 +53,8 @@ def main():
     plt.plot(t_non, np.abs(A_non_final) ** 2, label="Nonlinear", lw=1.2)
     plt.plot(t_full, np.abs(A_full_final) ** 2, label="Full NLSE", lw=1.2)
     plt.xlabel("Time (ps)")
-    plt.ylabel("Intensity |A|² (arb. units)")
-    plt.title("Final temporal intensity comparison")
+    plt.ylabel("Intensity |A|²")
+    plt.title("Temporal intensity comparison")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
@@ -72,7 +72,7 @@ def main():
     plt.semilogy(omega_full, S_full + 1e-16, label="Full NLSE", lw=1.2)
     plt.xlabel("Angular frequency (rad/ps)")
     plt.ylabel("Normalized spectral power (log scale)")
-    plt.title("Final spectral intensity comparison")
+    plt.title("Spectral intensity comparison")
     plt.legend()
     plt.grid(True, which="both")
     plt.tight_layout()
@@ -89,7 +89,7 @@ def main():
     plt.plot(z_non, E_non, label="Nonlinear")
     plt.plot(z_full, E_full, label="Full NLSE")
     plt.xlabel("Propagation distance z (km)")
-    plt.ylabel("Energy (arb. units)")
+    plt.ylabel("Energy")
     plt.title("Energy conservation check")
     plt.legend()
     plt.grid(True)

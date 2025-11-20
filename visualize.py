@@ -1,6 +1,4 @@
 """
-condensed, physics-focused visualization for NLSE solvers.
-
 Generates for each solver:
   - Temporal and spectral profiles at representative z positions
   - Energy vs. propagation distance
@@ -51,10 +49,11 @@ def plot_temporal_profiles(
         plt.plot(t, np.abs(fields[i])**2, color=c, lw=1.2,
                  label=f"z = {z[i]:.3f} km")
     plt.xlabel("Time (ps)")
-    plt.ylabel("|A|² (arb. units)")
+    plt.ylabel("|A|²")
     plt.title(f"{label}: Temporal evolution at selected z")
     plt.legend()
     plt.grid(True, alpha=0.3)
+    #plt.xlim(-60,60)
     plt.tight_layout()
     plt.savefig(os.path.join(PLOT_DIR, fname), dpi=200)
     plt.close()
@@ -86,6 +85,8 @@ def plot_spectral_profiles(
     plt.legend()
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
+    #plt.xlim(-0.5, 0.5)
+    #plt.ylim(bottom=np.max(A_w)*1e-3)
     plt.savefig(os.path.join(PLOT_DIR, fname), dpi=200)
     plt.close()
 
@@ -135,6 +136,7 @@ def plot_chirp(
     plt.title(f"{label}: Instantaneous frequency (chirp) at z={z[-1]:.3f} km")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
+    #plt.ylim(-0.2,0.2)
     plt.savefig(os.path.join(PLOT_DIR, fname), dpi=200)
     plt.close()
 

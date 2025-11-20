@@ -84,7 +84,6 @@ def _bluestein_fft(x: np.ndarray) -> np.ndarray:
     w = np.exp(-1j * np.pi * (k ** 2) / n)
 
     a = x * w  # length n
-    # convolution kernel b has length at least 2n-1
     m = 2 * n - 1
     m_fft = _next_power_of_two(m)
 

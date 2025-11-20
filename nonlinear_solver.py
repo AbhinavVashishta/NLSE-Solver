@@ -22,7 +22,7 @@ from utils import (
 logger = logging.getLogger(__name__)
 
 def nonlinear_phase_step(A: np.ndarray, gamma: float, alpha: float, dz: float) -> np.ndarray:
-    return A * np.exp(1j * gamma * np.abs(A) ** 2 * dz - 0.5 * alpha * dz)
+    return A * np.exp(-1j * gamma * np.abs(A) ** 2 * dz - 0.5 * alpha * dz)
 
 def nonlinear_propagate(
     A0: np.ndarray,

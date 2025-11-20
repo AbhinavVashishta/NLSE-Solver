@@ -89,7 +89,7 @@ def create_comparisons():
     try:
         import compare_results
         logger.info("Generating comparison plots...")
-        compare_results.main()   # clean, isolated, no exec garbage
+        compare_results.main()  
         logger.info("Comparison plots completed.\n")
         return True
     except FileNotFoundError:

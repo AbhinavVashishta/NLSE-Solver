@@ -1,8 +1,7 @@
 """
-Linear propagation of optical pulse in dispersive fiber
+Linear propagation solver
 Solves: i dA/dz + (beta2/2) d^2A/dt^2 - i*(alpha/2)*A = 0
-Units:
-t in ps, z in km, beta2 in ps^2/km, alpha in 1/km
+
 """
 
 import numpy as np
@@ -20,7 +19,6 @@ from utils import (
     save_results_npz,
 )
 
-# Configure logging for this module
 logger = logging.getLogger(__name__)
 
 
@@ -38,8 +36,8 @@ def linear_propagate(
     freqs = fftfreq(n, d=dt)
     omega = 2 * np.pi * freqs
 
-    # Linear operator in frequency domain: H = exp(-i*(beta2/2)*omega^2*dz - alpha/2*dz)
-    H = np.exp(-1j * 0.5 * beta2 * (omega ** 2) * dz - 0.5 * alpha * dz)
+    # Linear operator
+    H = np.exp(-1j * (beta2 / 2.0) * (omega ** 2) * dz - 0.5 * alpha * dz)
 
     A = A0.copy()
     z_values = np.linspace(0, z_max, n_steps + 1)

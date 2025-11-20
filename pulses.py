@@ -14,25 +14,23 @@ def create_pulse(
     peak_power: float = 1.0,
     norm_type: Literal["physical", "unit"] = "physical"
 ) -> np.ndarray:
+    dt = t[1] - t[0]
+
     if pulse_type == "gaussian":
-        # Gaussian: A(t) = A0 * exp(-t^2 / (2*t0^2))
         A = np.exp(-0.5 * (t / t0) ** 2)
     elif pulse_type == "sech":
-        # Hyperbolic secant: A(t) = A0 * sech(t / t0)
         A = 1.0 / np.cosh(t / t0)
     else:
         raise ValueError(f"Unknown pulse_type: {pulse_type}. Use 'gaussian' or 'sech'.")
-    
-    # Apply normalization
+
     if norm_type == "physical":
-        # Scale amplitude so |A|^2_max = peak_power
-        A = np.sqrt(peak_power) * A / np.max(np.abs(A))
+        A = A / np.max(np.abs(A))
+        A = A * np.sqrt(peak_power)
     elif norm_type == "unit":
-        # Normalize so max(|A|^2) = 1
         A = A / np.max(np.abs(A))
     else:
         raise ValueError(f"Unknown norm_type: {norm_type}. Use 'physical' or 'unit'.")
-    
+
     return A.astype(np.complex128)
 
 
@@ -44,12 +42,10 @@ def create_chirped_pulse(
     chirp_C: float = 0.0,
     norm_type: Literal["physical", "unit"] = "physical"
 ) -> np.ndarray:
-    # Get unchirped pulse
     A = create_pulse(t, pulse_type, t0, peak_power, norm_type)
-    
-    # Apply chirp: A(t) -> A(t) * exp(i * C * (t/t0)^2)
+
     if chirp_C != 0.0:
         phase = chirp_C * (t / t0) ** 2
         A = A * np.exp(1j * phase)
-    
+
     return A

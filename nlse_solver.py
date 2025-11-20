@@ -1,10 +1,3 @@
-"""
-Full Split-Step Fourier Method for NLSE
-Solves: i dA/dz + (beta2/2) d^2A/dt^2 + gamma|A|^2A - i*(alpha/2)*A = 0
-Units:
-t in ps, z in km, beta2 in ps^2/km, gamma in 1/(W*km), alpha in 1/km
-"""
-
 import numpy as np
 import logging
 from parameters import (
@@ -19,7 +12,6 @@ from utils import (
     save_results_npz,
 )
 
-# Configure logging for this module
 logger = logging.getLogger(__name__)
 
 
@@ -31,20 +23,18 @@ def ssfm_step(
     gamma: float,
     alpha: float
 ) -> np.ndarray:
-    # half-step linear operator:
-    # exponent: -i * (beta2/2) * omega^2 * (dz/2) = -i * beta2 * omega^2 * dz / 4
-    # include half of the loss in each half-step: exp(-alpha * dz / 4)
-    H_half = np.exp(-1j * (beta2 * (omega ** 2)) * (dz / 4.0) - 0.25 * alpha * dz)
 
-    # apply half dispersion
+    
+    # Half-step dispersion 
+    H_half = np.exp(-1j * (beta2 / 2.0) * (omega ** 2) * (dz / 2.0))
     A = ifft(fft(A) * H_half)
-
-    # full nonlinear step (time domain) and middle loss
-    A = A * np.exp(1j * gamma * np.abs(A) ** 2 * dz - 0.5 * alpha * dz)
-
-    # final half dispersion
+    
+    # Full nonlinear step
+    A = A * np.exp(-1j * gamma * np.abs(A) ** 2 * dz + 0.5 * alpha * dz)
+    
+    # Half-step dispersion
     A = ifft(fft(A) * H_half)
-
+    
     return A
 
 
@@ -77,7 +67,6 @@ def propagate_nlse(
 
 
 def main():
-    # Setup logging
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s"
@@ -86,7 +75,7 @@ def main():
     t = np.linspace(-T_MAX, T_MAX, N_T)
     A0 = create_pulse(t, INITIAL_PULSE, PULSE_T0, PULSE_PEAK_POWER, NORM_TYPE)
 
-    logger.info("Starting full NLSE propagation...")
+    logger.info("Starting NLSE propagation...")
     logger.info(f"Pulse type: {INITIAL_PULSE}, t0={PULSE_T0} ps, P0={PULSE_PEAK_POWER} W")
     logger.info(f"beta2={BETA2} ps^2/km, gamma={GAMMA} 1/(W*km), alpha={ALPHA} 1/km")
 

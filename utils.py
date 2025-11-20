@@ -26,7 +26,7 @@ def compute_spectral_width_rms(A: np.ndarray, t: np.ndarray) -> float:
     A_w = fftshift(fft(A))
     S = np.abs(A_w) ** 2
     domega = omega[1] - omega[0] if n > 1 else 1.0
-    omega_shifted = np.fft.fftshift(omega)  # keep indexing consistent
+    omega_shifted = np.fft.fftshift(omega) 
     S_sum = np.sum(S) * domega
     if S_sum == 0:
         return 0.0

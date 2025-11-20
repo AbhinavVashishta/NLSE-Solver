@@ -16,18 +16,18 @@ N_T = 2**12          # number of time samples (must be power of 2 for FFT)
 
 # Propagation Parameters:
 Z_MAX = 0.2           # total propagation length (km)
-NZ = 400              # number of steps or frames to record
+NZ = 800              # number of steps or frames to record
 DZ = Z_MAX / NZ       # step size (km)
 
 # Fiber Physical Parameters:
-BETA2 = -20.0         # ps^2/km  (anomalous dispersion; negative sign)
+BETA2 = -20         # ps^2/km  (anomalous dispersion; negative sign)
 GAMMA = 1.3           # 1/(W*km)  (nonlinear coefficient, typical for silica fiber)
-ALPHA = 0.0           # loss (1/km); set nonzero if you want attenuation
+ALPHA = 0.0           # loss (1/km); set nonzero for attenuation
 
 # Pulse Parameters:
-INITIAL_PULSE = "gaussian"   # "sech" or "gaussian"
-PULSE_T0 = 1.0               # width parameter (ps)
-PULSE_PEAK_POWER = 50        # W (peak power of pulse)
+INITIAL_PULSE = "sech"       # "sech" or "gaussian"
+PULSE_T0 = 15.38               # width parameter (ps)
+PULSE_PEAK_POWER = 61.5     # W (peak power of pulse)
 CENTER_WAVELENGTH = 1550.0   # nm (telecom wavelength)
 NORM_TYPE = "physical"       # "unit" normalizes peak to 1, "physical" keeps W units
 
@@ -37,9 +37,23 @@ C = 299792458 # Speed of light in vacuum (m/s)
 # Soliton parameters (for diagnostics):
 # Fundamental soliton condition: L_D = L_NL => N^2 = 1
 # where L_D = t0^2 / |beta2|, L_NL = 1 / (gamma * P0)
-L_D = PULSE_T0**2 / abs(BETA2)  # dispersion length (km)
-L_NL = 1.0 / (GAMMA * PULSE_PEAK_POWER) if PULSE_PEAK_POWER > 0 else np.inf  # nonlinear length (km)
-SOLITON_ORDER = np.sqrt(L_D / L_NL) if L_NL < np.inf else 0.0  # N parameter
+
+if INITIAL_PULSE.lower().startswith("sech"):
+    T_eff = PULSE_T0
+elif INITIAL_PULSE.lower().startswith("gaussian"):
+    T_eff = (2.3548200450309493 / 1.763) * PULSE_T0
+else:
+    T_eff = PULSE_T0
+
+L_D = PULSE_T0**2 / abs(BETA2)
+L_NL = 1.0 / (GAMMA * PULSE_PEAK_POWER) if PULSE_PEAK_POWER > 0 else np.inf
+
+if L_NL < np.inf and abs(BETA2) > 0:
+    SOLITON_ORDER = np.sqrt(GAMMA * PULSE_PEAK_POWER * (T_eff**2) / abs(BETA2))
+else:
+    SOLITON_ORDER = 0.0
+
+P0_recommend = abs(BETA2) / (GAMMA * (T_eff**2))
 
 # Soliton regime thresholds
 SOLITON_FUNDAMENTAL_TOLERANCE = 0.15  # N within 1.0 ± this is fundamental soliton
@@ -66,8 +80,9 @@ def print_parameters():
     print(f"L_D (dispersion) = {L_D:.4f} km")
     print(f"L_NL (nonlinear) = {L_NL:.4f} km")
     print(f"Soliton order N = {SOLITON_ORDER:.3f}")
+    print(f"Recommended P0 for N=1 = {P0_recommend:.6g} W")
     if abs(SOLITON_ORDER - 1.0) < SOLITON_FUNDAMENTAL_TOLERANCE:
-        print("  -> Near fundamental soliton regime!")
+        print("  -> Near fundamental soliton regime")
     elif SOLITON_SECOND_ORDER_MIN <= SOLITON_ORDER < SOLITON_SECOND_ORDER_MAX:
         print("  -> Second-order soliton regime (expect periodic oscillations)")
     elif SOLITON_ORDER >= SOLITON_SECOND_ORDER_MAX:
@@ -77,7 +92,7 @@ def print_parameters():
 
 def validate_parameters():
     dt = (2 * T_MAX) / N_T
-    freq_max = 1.0 / (2 * dt)  # Nyquist frequency (THz)
+    freq_max = 1.0 / (2 * dt)
     
     # Check temporal resolution
     samples_per_pulse = PULSE_T0 / dt
@@ -101,19 +116,17 @@ def validate_parameters():
         print("         Risk of spectral aliasing! Consider increasing N_T.")
     
     # Check step size for dispersion (CFL-like condition)
-    # Rule: dz << L_D to resolve dispersive evolution
     if DZ > 0.1 * L_D:
         print(f"WARNING: Step size dz={DZ:.4f} km is large compared to L_D={L_D:.4f} km")
         print("         Consider decreasing DZ for better accuracy.")
     
     # Check step size for nonlinearity
     max_phase_shift = GAMMA * PULSE_PEAK_POWER * DZ
-    if max_phase_shift > 0.5:  # more than ~0.5 rad per step can cause issues
+    if max_phase_shift > 0.5:
         print(f"WARNING: Max nonlinear phase per step = {max_phase_shift:.3f} rad")
         print("         This may be too large; consider smaller DZ.")
     
     print("Parameter validation complete.\n")
-
 
 if __name__ == "__main__":
     print_parameters()
